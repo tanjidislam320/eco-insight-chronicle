@@ -1,82 +1,103 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getWeatherHistory, getStoredLocation } from "@/lib/weatherApi";
+import { useMemo } from "react";
 
 const HistoricalComparison = () => {
-  // Mock historical data
-  const data1Year = [
-    { month: "Jan", thisYear: 26, lastYear: 24 },
-    { month: "Feb", thisYear: 27, lastYear: 25 },
-    { month: "Mar", thisYear: 29, lastYear: 27 },
-    { month: "Apr", thisYear: 31, lastYear: 29 },
-    { month: "May", thisYear: 32, lastYear: 30 },
-    { month: "Jun", thisYear: 30, lastYear: 28 },
-  ];
+  const location = getStoredLocation();
+  const history = getWeatherHistory(location);
 
-  const data5Years = [
-    { year: "2019", temp: 25.2 },
-    { year: "2020", temp: 25.8 },
-    { year: "2021", temp: 26.3 },
-    { year: "2022", temp: 26.9 },
-    { year: "2023", temp: 27.4 },
-    { year: "2024", temp: 28.1 },
-  ];
+  const { chartData, stats } = useMemo(() => {
+    if (history.length < 2) {
+      return { chartData: [], stats: { tempDiff: 0, rainfallDiff: 0 } };
+    }
 
-  const tempDiff = 2.3;
-  const rainfallDiff = -15;
+    // Get data from last 30 days for monthly view
+    const last30Days = history.slice(-30);
+    const chartData = last30Days.map(item => ({
+      date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      temp: item.temp,
+      rainfall: item.rainfall,
+    }));
+
+    // Calculate differences (compare most recent with oldest available)
+    const recent = history[history.length - 1];
+    const old = history[0];
+    const tempDiff = parseFloat((recent.temp - old.temp).toFixed(1));
+    const rainfallDiff = parseFloat((recent.rainfall - old.rainfall).toFixed(1));
+
+    return { chartData, stats: { tempDiff, rainfallDiff } };
+  }, [history]);
+
+  const daysOfData = history.length;
 
   return (
     <Card className="border-0 shadow-md bg-gradient-card">
       <CardHeader>
         <CardTitle className="text-foreground flex items-center gap-2">
-          📊 Historical Climate Comparison
+          📊 Historical Climate Trends
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Track climate changes over time
+          Local weather data collected over time • {daysOfData} day{daysOfData !== 1 ? 's' : ''} of data
         </p>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="1year" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="1year">1 Year</TabsTrigger>
-            <TabsTrigger value="5years">5 Years</TabsTrigger>
-            <TabsTrigger value="10years">10 Years</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="1year" className="space-y-4">
+        {daysOfData < 2 ? (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Historical comparison will appear here as you use the app over time. 
+              Weather data is automatically collected daily to track climate trends.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div className="bg-secondary/50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Temperature Change</p>
-                    <p className="text-2xl font-bold text-foreground">+{tempDiff}°C</p>
+                    <p className="text-sm text-muted-foreground">Temperature Trend</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stats.tempDiff > 0 ? '+' : ''}{stats.tempDiff}°C
+                    </p>
                   </div>
-                  <TrendingUp className="w-8 h-8 text-warning" />
+                  {stats.tempDiff > 0 ? (
+                    <TrendingUp className="w-8 h-8 text-warning" />
+                  ) : (
+                    <TrendingDown className="w-8 h-8 text-accent" />
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Today is {tempDiff}°C hotter than last year
+                  Change since first recorded data
                 </p>
               </div>
 
               <div className="bg-secondary/50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Rainfall Change</p>
-                    <p className="text-2xl font-bold text-foreground">{rainfallDiff}%</p>
+                    <p className="text-sm text-muted-foreground">Cloud Cover Trend</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stats.rainfallDiff > 0 ? '+' : ''}{stats.rainfallDiff}%
+                    </p>
                   </div>
-                  <TrendingDown className="w-8 h-8 text-accent" />
+                  {stats.rainfallDiff > 0 ? (
+                    <TrendingUp className="w-8 h-8 text-accent" />
+                  ) : (
+                    <TrendingDown className="w-8 h-8 text-accent" />
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  {Math.abs(rainfallDiff)}% less rainfall this year
+                  Change in cloud coverage over time
                 </p>
               </div>
             </div>
 
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data1Year}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
                 <Tooltip 
                   contentStyle={{ 
@@ -88,61 +109,30 @@ const HistoricalComparison = () => {
                 <Legend />
                 <Line 
                   type="monotone" 
-                  dataKey="thisYear" 
+                  dataKey="temp" 
                   stroke="hsl(var(--primary))" 
                   strokeWidth={2}
-                  name="This Year"
+                  name="Temperature (°C)"
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="lastYear" 
+                  dataKey="rainfall" 
                   stroke="hsl(var(--accent))" 
                   strokeWidth={2}
-                  name="Last Year"
+                  name="Cloud Cover (%)"
                 />
               </LineChart>
             </ResponsiveContainer>
-          </TabsContent>
-
-          <TabsContent value="5years" className="space-y-4">
-            <div className="bg-secondary/50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-muted-foreground mb-2">5-Year Temperature Trend</p>
-              <p className="text-lg font-semibold text-foreground">
-                Average temperature has increased by 2.9°C over the past 5 years
-              </p>
-            </div>
-
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data5Years}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "var(--radius)"
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="temp" 
-                  stroke="hsl(var(--warning))" 
-                  strokeWidth={3}
-                  name="Avg Temperature (°C)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </TabsContent>
-
-          <TabsContent value="10years">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                10-year historical data will be available soon
-              </p>
-            </div>
-          </TabsContent>
-        </Tabs>
+            
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Data is collected automatically each day. For full historical comparison 
+                (1+ years), consider upgrading to OpenWeatherMap's paid plan for access to their Historical API.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

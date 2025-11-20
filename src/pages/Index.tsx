@@ -4,8 +4,14 @@ import HistoricalComparison from "@/components/HistoricalComparison";
 import DailyChallenge from "@/components/DailyChallenge";
 import CarbonTips from "@/components/CarbonTips";
 import ExtremeWeatherAlerts from "@/components/ExtremeWeatherAlerts";
+import SettingsDialog from "@/components/SettingsDialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { getApiKey } from "@/lib/weatherApi";
 
 const Index = () => {
+  const hasApiKey = getApiKey();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -21,12 +27,22 @@ const Index = () => {
                 <p className="text-white/80 text-sm">Your personal climate awareness companion</p>
               </div>
             </div>
+            <SettingsDialog />
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 space-y-6">
+        {!hasApiKey && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Welcome to Climate Compass! Please configure your OpenWeatherMap API key in settings to get started.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {/* Weather Dashboard */}
         <WeatherDashboard />
 
