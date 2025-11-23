@@ -3,6 +3,7 @@ import WeatherDashboard from "@/components/WeatherDashboard";
 import HistoricalComparison from "@/components/HistoricalComparison";
 import DailyChallenge from "@/components/DailyChallenge";
 import CarbonTips from "@/components/CarbonTips";
+import CarbonCalculator from "@/components/CarbonCalculator";
 import ExtremeWeatherAlerts from "@/components/ExtremeWeatherAlerts";
 import SettingsDialog from "@/components/SettingsDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -53,6 +54,7 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <HistoricalComparison />
           <div className="space-y-6">
+            <CarbonCalculator />
             <CarbonTips />
             <ExtremeWeatherAlerts />
           </div>
