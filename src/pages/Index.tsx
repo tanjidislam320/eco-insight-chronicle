@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Leaf } from "lucide-react";
 import WeatherDashboard from "@/components/WeatherDashboard";
 import HistoricalComparison from "@/components/HistoricalComparison";
@@ -8,9 +9,17 @@ import ExtremeWeatherAlerts from "@/components/ExtremeWeatherAlerts";
 import SettingsDialog from "@/components/SettingsDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { getApiKey } from "@/lib/weatherApi";
+import { getApiKey, setApiKey, setStoredLocation } from "@/lib/weatherApi";
 
 const Index = () => {
+  useEffect(() => {
+    // Initialize API key and location if not set
+    if (!getApiKey()) {
+      setApiKey("8a8bc742a11623509eda0a0a1fac9f06");
+      setStoredLocation("Chittagong");
+    }
+  }, []);
+
   const hasApiKey = getApiKey();
 
   return (
